@@ -1,52 +1,24 @@
 import { Hono } from 'hono'
 import { deleteCookie, getSignedCookie, setSignedCookie } from 'hono/cookie'
-import type { FC, PropsWithChildren } from 'hono/jsx'
+import type { FC } from 'hono/jsx'
 import type { AppEnv } from '../lib/types'
 import { hashPassword, randomSalt, verifyPassword } from '../lib/auth'
 import { importFitments, importProducts, type FitmentRow, type ProductRow } from '../lib/importer'
 import { rebuildSearchIndex } from '../lib/search'
 import { formatVnd } from '../lib/text'
+import { AdminLayout } from '../views/admin-layout'
+import { Dashboard, loadDashboard } from '../views/admin-dashboard'
 
 export const admin = new Hono<AppEnv>()
 const COOKIE = 'mlot_admin'
 
-const AdminLayout: FC<PropsWithChildren<{ title: string }>> = ({ title, children }) => (
-  <html lang="vi">
-    <head>
-      <meta charset="utf-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <meta name="robots" content="noindex" />
-      <title>{title} – Quản trị</title>
-      <link rel="stylesheet" href="/style.css" />
-      <script src="/forms.js" defer></script>
-    </head>
-    <body class="admin">
-      <header class="site-header">
-        <div class="wrap header-row">
-          <a href="/admin" class="logo"><img src="/logo-mark.svg" alt="DQT" width="56" height="30" /> Quản trị</a>
-          <nav class="admin-nav">
-            <a href="/admin/don-hang">Đơn hàng</a>
-            <a href="/admin/bao-gia">Yêu cầu báo giá</a>
-            <a href="/admin/san-pham">Sản phẩm</a>
-            <a href="/admin/sap-xep">Sắp xếp trang chủ</a>
-            <a href="/admin/nhap-excel">Nhập Excel</a>
-            <a href="/admin/anh">Tải ảnh</a>
-            <a href="/admin/dang-xuat">Đăng xuất</a>
-          </nav>
-        </div>
-      </header>
-      <main class="wrap">{children}</main>
-    </body>
-  </html>
-)
 
 // Tạo tài khoản quản trị đầu tiên (chỉ mở khi chưa có tài khoản nào)
 admin.get('/cai-dat', async (c) => {
   const n = await c.env.DB.prepare('SELECT COUNT(*) AS n FROM admins').first<{ n: number }>()
   if (n!.n > 0) return c.redirect('/admin/dang-nhap')
   return c.html(
-    <AdminLayout title="Cài đặt">
-      <h1>Tạo tài khoản quản trị</h1>
+    <AdminLayout title="Tạo tài khoản quản trị" sub="Tài khoản đầu tiên để cửa hàng quản lý sản phẩm, đơn hàng." bare>
       <form method="post" class="form" data-loader="Đang tạo tài khoản…">
         <label class="f-row"><span>Tên đăng nhập <i>*</i></span><input name="username" placeholder="Ví dụ: dqt" required autocomplete="username" /></label>
         <label class="f-row"><span>Mật khẩu <i>*</i></span><input name="password" type="password" placeholder="Tối thiểu 10 ký tự" minlength={10} required autocomplete="new-password" /></label>
@@ -71,8 +43,7 @@ admin.post('/cai-dat', async (c) => {
 
 // Sai mật khẩu: hiện lại form, báo đỏ dưới ô mật khẩu, giữ tên đăng nhập đã gõ
 const LoginPage: FC<{ username?: string; wrong?: boolean }> = ({ username = '', wrong }) => (
-  <AdminLayout title="Đăng nhập">
-    <h1>Đăng nhập quản trị</h1>
+  <AdminLayout title="Đăng nhập quản trị" sub="Quản lý sản phẩm, đơn hàng và yêu cầu báo giá của cửa hàng." bare>
     <form method="post" action="/admin/dang-nhap" class="form" data-loader="Đang đăng nhập…">
       <label class="f-row"><span>Tên đăng nhập <i>*</i></span><input name="username" value={username} required autocomplete="username" /></label>
       <label class="f-row"><span>Mật khẩu <i>*</i></span>
@@ -107,67 +78,95 @@ admin.use('*', async (c, next) => {
   const user = await getSignedCookie(c, c.env.SESSION_SECRET, COOKIE)
   if (!user) return c.req.path.includes('/api/') ? c.json({ error: 'Chưa đăng nhập' }, 401) : c.redirect('/admin/dang-nhap')
   c.set('admin', user)
+  if (!c.req.path.includes('/api/')) {
+    const r = await c.env.DB.prepare(
+      "SELECT (SELECT COUNT(*) FROM orders WHERE status = 'Chờ thanh toán') AS o, (SELECT COUNT(*) FROM quote_requests WHERE handled = 0) AS q",
+    ).first<{ o: number; q: number }>()
+    c.set('badges', { orders: r?.o ?? 0, quotes: r?.q ?? 0 })
+  }
   await next()
 })
 
 admin.get('/', async (c) => {
-  const [p, o, q] = await c.env.DB.batch([
-    c.env.DB.prepare('SELECT COUNT(*) AS n FROM products'),
-    c.env.DB.prepare("SELECT COUNT(*) AS n FROM orders WHERE status = 'Chờ thanh toán'"),
-    c.env.DB.prepare('SELECT COUNT(*) AS n FROM quote_requests WHERE handled = 0'),
-  ])
-  const n = (r: D1Result) => (r.results[0] as { n: number }).n
+  const d = await loadDashboard(c.env)
+  const hour = Number(new Date(Date.now() + 7 * 3600e3).toISOString().slice(11, 13))
+  const hello = hour < 11 ? 'Chào buổi sáng' : hour < 14 ? 'Chào buổi trưa' : hour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối'
   return c.html(
-    <AdminLayout title="Tổng quan">
-      <h1>Xin chào {c.get('admin')}</h1>
-      <div class="stats">
-        <a href="/admin/san-pham" class="stat"><b>{n(p)}</b> sản phẩm</a>
-        <a href="/admin/don-hang" class="stat"><b>{n(o)}</b> đơn chờ thanh toán</a>
-        <a href="/admin/bao-gia" class="stat"><b>{n(q)}</b> yêu cầu báo giá mới</a>
-      </div>
+    <AdminLayout title="Tổng quan" sub={`${hello}, ${c.get('admin')}. Đây là tình hình cửa hàng hôm nay.`} active="home" v={c.var}>
+      <Dashboard d={d} quoteMode={(c.env.CHECKOUT_MODE || 'quote') !== 'pay'} />
     </AdminLayout>,
   )
 })
 
+// Trạng thái đơn: lưu tên cũ trong cơ sở dữ liệu, hiện tên dễ hiểu theo chế độ giỏ hàng
+const STATUSES = ['Chờ thanh toán', 'Đã thanh toán', 'Đã giao', 'Huỷ']
+const statusLabel = (env: AppEnv['Bindings'], s: string) =>
+  (env.CHECKOUT_MODE || 'quote') !== 'pay'
+    ? ({ 'Chờ thanh toán': 'Chờ gọi lại', 'Đã thanh toán': 'Đã chốt đơn', 'Đã giao': 'Đã giao', 'Huỷ': 'Huỷ' } as Record<string, string>)[s] || s
+    : s
+const statusTone = (s: string) => (s === 'Chờ thanh toán' ? 'warn' : s === 'Huỷ' ? 'mute' : 'good')
+// Giờ lưu UTC, hiện giờ Việt Nam
+const vnTime = (t: string) => {
+  const d = new Date(t.replace(' ', 'T') + 'Z')
+  if (isNaN(+d)) return t
+  const v = new Date(+d + 7 * 3600e3).toISOString()
+  return `${v.slice(11, 16)} ${v.slice(8, 10)}/${v.slice(5, 7)}/${v.slice(0, 4)}`
+}
+
 admin.get('/don-hang', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM orders ORDER BY id DESC LIMIT 200').all<{
-    id: number; code: string; customer_name: string; phone: string; total: number; status: string; created_at: string
+  const st = c.req.query('tt') || ''
+  const stmt = STATUSES.includes(st)
+    ? c.env.DB.prepare('SELECT * FROM orders WHERE status = ? ORDER BY id DESC LIMIT 200').bind(st)
+    : c.env.DB.prepare('SELECT * FROM orders ORDER BY id DESC LIMIT 200')
+  const { results } = await stmt.all<{
+    id: number; code: string; customer_name: string; phone: string; address: string | null; note: string | null; total: number; status: string; created_at: string
   }>()
   return c.html(
-    <AdminLayout title="Đơn hàng">
-      <h1>Đơn hàng</h1>
-      <p class="muted">Đơn hàng và yêu cầu báo giá khách gửi từ giỏ hàng. Gọi lại khách theo số điện thoại, cập nhật trạng thái sau khi xử lý.</p>
-      <table class="fit-table">
-        <thead><tr><th>Mã đơn</th><th>Khách</th><th>Điện thoại</th><th>Tổng</th><th>Trạng thái</th><th>Ngày</th><th></th></tr></thead>
-        <tbody>
-          {!results.length && <tr><td colspan={7} class="admin-empty">Chưa có đơn hàng nào.</td></tr>}
-          {results.map((o) => (
-            <tr>
-              <td><a href={`/don-hang/${o.code}`} target="_blank">{o.code}</a></td>
-              <td>{o.customer_name}</td>
-              <td><a href={`tel:${o.phone}`}>{o.phone}</a></td>
-              <td>{formatVnd(o.total)}</td>
-              <td>{o.status}</td>
-              <td>{o.created_at}</td>
-              <td>
-                <form method="post" action={`/admin/don-hang/${o.id}`} class="inline" data-loader="Đang lưu…">
-                  <select name="status">
-                    {['Chờ thanh toán', 'Đã thanh toán', 'Đã giao', 'Huỷ'].map((s) => <option selected={s === o.status}>{s}</option>)}
-                  </select>
-                  <button class="btn">Lưu</button>
-                </form>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <AdminLayout title="Đơn hàng" sub="Khách gửi từ giỏ hàng. Gọi lại theo số điện thoại rồi cập nhật trạng thái." active="orders" v={c.var}>
+      <div class="ad-chips">
+        <a href="/admin/don-hang" class={!st ? 'on' : undefined}>Tất cả</a>
+        {STATUSES.map((s) => <a href={`/admin/don-hang?tt=${encodeURIComponent(s)}`} class={st === s ? 'on' : undefined}>{statusLabel(c.env, s)}</a>)}
+      </div>
+      <div class="ad-card ad-table-card">
+        {!results.length ? (
+          <div class="ad-empty"><b>Chưa có đơn hàng nào{st ? ' ở trạng thái này' : ''}.</b><span>Khi khách gửi từ giỏ hàng, đơn sẽ hiện ở đây.</span></div>
+        ) : (
+          <table class="ad-table">
+            <thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Tổng</th><th>Trạng thái</th><th>Thời gian</th><th>Cập nhật</th></tr></thead>
+            <tbody>
+              {results.map((o) => (
+                <tr>
+                  <td data-label="Mã đơn"><a href={`/don-hang/${o.code}`} target="_blank" class="ad-code">{o.code}</a></td>
+                  <td data-label="Khách hàng">
+                    <b>{o.customer_name}</b>
+                    <a href={`tel:${o.phone}`} class="ad-tel">{o.phone}</a>
+                    {o.address && <small class="ad-muted">{o.address}</small>}
+                    {o.note && <small class="ad-muted">Ghi chú: {o.note}</small>}
+                  </td>
+                  <td data-label="Tổng" class="ad-num">{formatVnd(o.total)}</td>
+                  <td data-label="Trạng thái"><span class={'ad-pill ' + statusTone(o.status)}>{statusLabel(c.env, o.status)}</span></td>
+                  <td data-label="Thời gian" class="ad-muted">{vnTime(o.created_at)}</td>
+                  <td data-label="Cập nhật">
+                    <form method="post" action={`/admin/don-hang/${o.id}`} class="ad-inline" data-loader="Đang lưu…">
+                      <select name="status" aria-label="Trạng thái">
+                        {STATUSES.map((s) => <option value={s} selected={s === o.status}>{statusLabel(c.env, s)}</option>)}
+                      </select>
+                      <button class="ad-btn">Lưu</button>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </AdminLayout>,
   )
 })
 admin.post('/don-hang/:id', async (c) => {
   const f = await c.req.parseBody()
   const status = String(f.status)
-  if (!['Chờ thanh toán', 'Đã thanh toán', 'Đã giao', 'Huỷ'].includes(status)) return c.text('Trạng thái không hợp lệ', 400)
+  if (!STATUSES.includes(status)) return c.redirect('/admin/don-hang')
   await c.env.DB.prepare('UPDATE orders SET status = ? WHERE id = ?').bind(status, Number(c.req.param('id'))).run()
   return c.redirect('/admin/don-hang')
 })
@@ -177,25 +176,33 @@ admin.get('/bao-gia', async (c) => {
     id: number; name: string; phone: string; vehicle: string; message: string; product_sku: string | null; handled: number; created_at: string
   }>()
   return c.html(
-    <AdminLayout title="Yêu cầu báo giá">
-      <h1>Yêu cầu báo giá</h1>
-      <table class="fit-table">
-        <thead><tr><th>Ngày</th><th>Khách</th><th>Điện thoại</th><th>Xe</th><th>Nội dung</th><th>Mã SP</th><th></th></tr></thead>
-        <tbody>
-          {!results.length && <tr><td colspan={7} class="admin-empty">Chưa có yêu cầu báo giá nào.</td></tr>}
-          {results.map((q) => (
-            <tr class={q.handled ? 'muted' : ''}>
-              <td>{q.created_at}</td><td>{q.name}</td><td><a href={`tel:${q.phone}`}>{q.phone}</a></td>
-              <td>{q.vehicle}</td><td>{q.message}</td><td>{q.product_sku}</td>
-              <td>
-                {!q.handled && (
-                  <form method="post" action={`/admin/bao-gia/${q.id}`} class="inline" data-loader="Đang lưu…"><button class="btn">Đã xử lý</button></form>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <AdminLayout title="Yêu cầu báo giá" sub="Khách chưa tìm thấy phụ tùng hoặc chưa chắc đúng xe. Gọi lại tư vấn rồi bấm Đã xử lý." active="quotes" v={c.var}>
+      <div class="ad-card ad-table-card">
+        {!results.length ? (
+          <div class="ad-empty"><b>Chưa có yêu cầu báo giá nào.</b><span>Yêu cầu từ trang "Yêu cầu báo giá" sẽ hiện ở đây.</span></div>
+        ) : (
+          <table class="ad-table">
+            <thead><tr><th>Khách hàng</th><th>Xe</th><th>Cần tìm</th><th>Thời gian</th><th>Trạng thái</th></tr></thead>
+            <tbody>
+              {results.map((q) => (
+                <tr class={q.handled ? 'is-done' : undefined}>
+                  <td data-label="Khách hàng"><b>{q.name}</b><a href={`tel:${q.phone}`} class="ad-tel">{q.phone}</a></td>
+                  <td data-label="Xe">{q.vehicle || '—'}</td>
+                  <td data-label="Cần tìm">{q.message || '—'}{q.product_sku && <small class="ad-muted">Đang xem mã: {q.product_sku}</small>}</td>
+                  <td data-label="Thời gian" class="ad-muted">{vnTime(q.created_at)}</td>
+                  <td data-label="Trạng thái">
+                    {q.handled ? (
+                      <span class="ad-pill good">Đã xử lý</span>
+                    ) : (
+                      <form method="post" action={`/admin/bao-gia/${q.id}`} class="ad-inline" data-loader="Đang lưu…"><span class="ad-pill warn">Chờ gọi lại</span><button class="ad-btn">Đã xử lý</button></form>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </AdminLayout>,
   )
 })
@@ -204,31 +211,60 @@ admin.post('/bao-gia/:id', async (c) => {
   return c.redirect('/admin/bao-gia')
 })
 
+// Bộ lọc nhanh danh sách sản phẩm (bấm từ ô số liệu ở trang Tổng quan)
+const PRODUCT_FILTERS: Record<string, { label: string; where: string }> = {
+  'het-hang': { label: 'Hết hàng', where: "status = 'Hết hàng'" },
+  'lien-he': { label: 'Giá "Liên hệ"', where: 'price IS NULL' },
+  'chua-anh': { label: 'Chưa có ảnh', where: "(images = '[]' OR images = '')" },
+  'chua-xe': { label: 'Chưa gắn xe phù hợp', where: 'NOT EXISTS (SELECT 1 FROM fitments f WHERE f.group_key = COALESCE(products.vehicle_group, products.sku))' },
+}
+
 admin.get('/san-pham', async (c) => {
   const q = (c.req.query('q') || '').trim()
-  const stmt = q
-    ? c.env.DB.prepare('SELECT * FROM products WHERE sku LIKE ?1 OR name LIKE ?1 OR oem_codes LIKE ?1 ORDER BY name LIMIT 200').bind(`%${q}%`)
-    : c.env.DB.prepare('SELECT * FROM products ORDER BY updated_at DESC LIMIT 200')
-  const { results } = await stmt.all<{ id: number; sku: string; name: string; brand: string; origin: string; voltage: string; price: number | null; status: string; slug: string }>()
+  const loc = c.req.query('loc') || ''
+  const filter = PRODUCT_FILTERS[loc]
+  const where: string[] = []
+  const binds: string[] = []
+  if (q) { where.push('(sku LIKE ?1 OR name LIKE ?1 OR oem_codes LIKE ?1)'); binds.push(`%${q}%`) }
+  if (filter) where.push(filter.where)
+  const sql = `SELECT * FROM products ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY ${q ? 'name' : 'updated_at DESC'} LIMIT 200`
+  const { results } = await c.env.DB.prepare(sql).bind(...binds).all<{ id: number; sku: string; name: string; category: string; brand: string; origin: string; voltage: string; price: number | null; status: string; slug: string; images: string }>()
+  const qs = (k: string) => `/admin/san-pham?${new URLSearchParams({ ...(q ? { q } : {}), ...(k ? { loc: k } : {}) })}`
   return c.html(
-    <AdminLayout title="Sản phẩm">
-      <h1>Sản phẩm</h1>
-      <form class="inline" data-loader="Đang tìm…"><input name="q" value={q} placeholder="Mã, tên, mã OEM" aria-label="Tìm sản phẩm" /><button class="btn">Tìm</button></form>
-      <p>Thêm, sửa hàng loạt bằng <a href="/admin/nhap-excel">Nhập Excel</a> theo file mẫu.</p>
-      <table class="fit-table">
-        <thead><tr><th>Mã</th><th>Tên</th><th>Loại</th><th>Giá</th><th>Tình trạng</th></tr></thead>
-        <tbody>
-          {results.map((p) => (
-            <tr>
-              <td>{p.sku}</td>
-              <td><a href={`/san-pham/${p.slug}`} target="_blank">{p.name}</a></td>
-              <td>{[p.brand, p.origin, p.voltage].filter(Boolean).join(' · ')}</td>
-              <td>{formatVnd(p.price)}</td>
-              <td>{p.status}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <AdminLayout title="Sản phẩm" sub="Thêm, sửa hàng loạt bằng Nhập Excel theo file mẫu. Bấm tên để xem trên web." active="products" v={c.var}
+      actions={<a href="/admin/nhap-excel" class="ad-btn ad-btn-primary"><span>+ Nhập Excel</span></a>}>
+      <div class="ad-toolbar">
+        <form class="ad-search" data-loader="Đang tìm…">
+          <input name="q" value={q} placeholder="Tìm theo mã, tên, mã OEM…" aria-label="Tìm sản phẩm" />
+          {loc && <input type="hidden" name="loc" value={loc} />}
+          <button class="ad-btn">Tìm</button>
+        </form>
+        <div class="ad-chips">
+          <a href={qs('')} class={!filter ? 'on' : undefined}>Tất cả</a>
+          {Object.entries(PRODUCT_FILTERS).map(([k, f]) => <a href={qs(k)} class={loc === k ? 'on' : undefined}>{f.label}</a>)}
+        </div>
+      </div>
+      <div class="ad-card ad-table-card">
+        <div class="ad-card-head"><span>{results.length >= 200 ? 'Hiện 200 sản phẩm đầu' : `${results.length} sản phẩm`}{filter ? ` · ${filter.label}` : ''}{q ? ` · tìm "${q}"` : ''}</span></div>
+        {!results.length ? (
+          <div class="ad-empty"><b>Không có sản phẩm nào khớp.</b><span>Thử bỏ bộ lọc hoặc tìm bằng mã khác.</span></div>
+        ) : (
+          <table class="ad-table">
+            <thead><tr><th>Mã</th><th>Tên sản phẩm</th><th>Loại</th><th class="ad-num">Giá</th><th>Tình trạng</th></tr></thead>
+            <tbody>
+              {results.map((p) => (
+                <tr>
+                  <td data-label="Mã" class="ad-code">{p.sku}</td>
+                  <td data-label="Tên"><a href={`/san-pham/${p.slug}`} target="_blank">{p.name}</a><small class="ad-muted">{p.category}{p.images === '[]' ? ' · chưa có ảnh' : ''}</small></td>
+                  <td data-label="Loại">{[p.brand, p.origin, p.voltage].filter(Boolean).join(' · ') || '—'}</td>
+                  <td data-label="Giá" class="ad-num">{p.price == null ? <span class="ad-muted">Liên hệ</span> : formatVnd(p.price)}</td>
+                  <td data-label="Tình trạng"><span class={'ad-pill ' + (p.status === 'Hết hàng' ? 'mute' : 'good')}>{p.status}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </AdminLayout>,
   )
 })
@@ -241,25 +277,25 @@ admin.get('/sap-xep', async (c) => {
   ).all<{ slug: string; name: string; category: string; ord: number | null; n: number }>()
   const saved = c.req.query('ok') === '1'
   return c.html(
-    <AdminLayout title="Sắp xếp trang chủ">
-      <h1>Sắp xếp sản phẩm trên trang chủ</h1>
-      <p>Đánh số thứ tự: số nhỏ hiện trước. Mỗi trang của dải sản phẩm có 4 sản phẩm: số 1–4 là trang 1, 5–8 là trang 2... Để trống thì sản phẩm xếp sau, theo tên.</p>
-      {saved && <p class="ok">Đã lưu thứ tự.</p>}
-      <form method="post" class="form" data-loader="Đang lưu thứ tự…">
-        <table class="fit-table">
-          <thead><tr><th>Thứ tự</th><th>Trang</th><th>Sản phẩm</th><th>Danh mục</th></tr></thead>
-          <tbody>
-            {results.map((p) => (
-              <tr>
-                <td><input type="number" min="1" max="9999" name={`ord:${p.slug}`} value={p.ord ?? ''} style="width:80px" /></td>
-                <td>{p.ord ? Math.ceil(p.ord / 4) : '—'}</td>
-                <td><a href={`/san-pham/${p.slug}`} target="_blank">{p.name}</a>{p.n > 1 ? ` (${p.n} loại)` : ''}</td>
-                <td>{p.category}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <p><button class="btn btn-primary">Lưu thứ tự</button></p>
+    <AdminLayout title="Sắp xếp trang chủ" sub="Đánh số thứ tự: số nhỏ hiện trước. Mỗi trang dải sản phẩm có 4 sản phẩm (1–4 là trang 1, 5–8 là trang 2…). Để trống thì xếp sau, theo tên." active="sort" v={c.var}>
+      {saved && <div class="ad-alert good">Đã lưu thứ tự. Trang chủ đã cập nhật.</div>}
+      <form method="post" data-loader="Đang lưu thứ tự…">
+        <div class="ad-card ad-table-card">
+          <table class="ad-table">
+            <thead><tr><th>Thứ tự</th><th>Trang</th><th>Sản phẩm</th><th>Danh mục</th></tr></thead>
+            <tbody>
+              {results.map((p) => (
+                <tr>
+                  <td data-label="Thứ tự"><input type="number" min="1" max="9999" name={`ord:${p.slug}`} value={p.ord ?? ''} class="ad-ord" aria-label={`Thứ tự ${p.name}`} /></td>
+                  <td data-label="Trang">{p.ord ? <span class="ad-pill good">Trang {Math.ceil(p.ord / 4)}</span> : <span class="ad-muted">—</span>}</td>
+                  <td data-label="Sản phẩm"><a href={`/san-pham/${p.slug}`} target="_blank">{p.name}</a>{p.n > 1 && <small class="ad-muted">{p.n} loại</small>}</td>
+                  <td data-label="Danh mục">{p.category}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div class="ad-sticky-save"><button class="ad-btn ad-btn-primary">Lưu thứ tự</button></div>
       </form>
     </AdminLayout>,
   )
@@ -281,10 +317,8 @@ admin.post('/sap-xep', async (c) => {
 // Trang nhập Excel: trình duyệt đọc file theo mẫu, gửi từng phần lên máy chủ, hiện lỗi từng dòng
 admin.get('/nhap-excel', (c) =>
   c.html(
-    <AdminLayout title="Nhập Excel">
-      <h1>Nhập sản phẩm từ Excel</h1>
-      <p>Dùng đúng file mẫu (sheet "Sản phẩm" và "Xe phù hợp"). Sản phẩm trùng mã sẽ được cập nhật, mã mới sẽ được thêm.</p>
-      <div class="form">
+    <AdminLayout title="Nhập Excel" sub='Dùng đúng file mẫu (sheet "Sản phẩm" và "Xe phù hợp"). Trùng mã thì cập nhật, mã mới thì thêm. Dòng lỗi được báo rõ số dòng.' active="import" v={c.var}>
+      <div class="form ad-card ad-form-card">
         <input type="file" id="xlsx-file" accept=".xlsx" data-label="file Excel (.xlsx) theo mẫu" />
         <label><input type="checkbox" id="skip-examples" checked /> Bỏ qua các dòng ví dụ (cột Mô tả có chữ "VÍ DỤ")</label>
         <button class="btn btn-primary" id="xlsx-import">Nhập dữ liệu</button>
@@ -312,10 +346,8 @@ admin.post('/api/reindex', async (c) => {
 // Tải ảnh: trình duyệt tự nén sang WebP rồi gửi lên R2
 admin.get('/anh', (c) =>
   c.html(
-    <AdminLayout title="Tải ảnh">
-      <h1>Tải ảnh sản phẩm</h1>
-      <p>Chọn nhiều ảnh cùng lúc. Tên file phải trùng với cột "Tên file ảnh" trong Excel. Ảnh được tự nén trước khi tải lên.</p>
-      <div class="form">
+    <AdminLayout title="Tải ảnh" sub='Chọn nhiều ảnh cùng lúc. Tên file trùng cột "Tên file ảnh" trong Excel. Ảnh tự nén trước khi tải lên.' active="images" v={c.var}>
+      <div class="form ad-card ad-form-card">
         <input type="file" id="img-files" accept="image/*" multiple data-label="ảnh sản phẩm" />
         <button class="btn btn-primary" id="img-upload">Tải lên</button>
       </div>

@@ -144,3 +144,50 @@ export const IconYoutube: FC<{ size?: number }> = ({ size = 22 }) => (
     <path d="M10 8.8v6.4l5.4-3.2z" fill="#fff" />
   </svg>
 )
+
+// Biểu tượng trang quản trị
+export const IconDashboard: FC<P> = (p) => (
+  <S {...p}><rect x="3" y="3" width="8" height="10" rx="2" /><rect x="13" y="3" width="8" height="6" rx="2" /><rect x="13" y="11" width="8" height="10" rx="2" /><rect x="3" y="15" width="8" height="6" rx="2" /></S>
+)
+export const IconReceipt: FC<P> = (p) => (
+  <S {...p}><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3" /></S>
+)
+export const IconChat: FC<P> = (p) => (
+  <S {...p}><path d="M4 5h16v11H9l-5 4zM8 9h8M8 12h5" /></S>
+)
+export const IconBox: FC<P> = (p) => (
+  <S {...p}><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5zM3 7.5l9 4.5 9-4.5M12 12v9" /></S>
+)
+export const IconSort: FC<P> = (p) => (
+  <S {...p}><path d="M7 4v16M3.5 7.5 7 4l3.5 3.5M17 20V4M13.5 16.5 17 20l3.5-3.5" /></S>
+)
+export const IconUpload: FC<P> = (p) => (
+  <S {...p}><path d="M12 16V4M7.5 8.5 12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" /></S>
+)
+export const IconImage: FC<P> = (p) => (
+  <S {...p}><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="2" /><path d="m3 17 5-4 4 3 3-2 6 4" /></S>
+)
+export const IconLogout: FC<P> = (p) => (
+  <S {...p}><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10" /></S>
+)
+export const IconExternal: FC<P> = (p) => (
+  <S {...p}><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" /></S>
+)
+export const IconMenu: FC<P> = (p) => (
+  <S {...p}><path d="M4 7h16M4 12h16M4 17h16" /></S>
+)
+export const IconClock: FC<P> = (p) => (
+  <S {...p}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></S>
+)
+export const IconMoney: FC<P> = (p) => (
+  <S {...p}><rect x="2.5" y="6" width="19" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /><path d="M6 9.5v5M18 9.5v5" /></S>
+)
+export const IconChart: FC<P> = (p) => (
+  <S {...p}><path d="M4 20V4M4 20h16M8 16v-4M12 16V8M16 16v-6" /></S>
+)
+export const IconDatabase: FC<P> = (p) => (
+  <S {...p}><ellipse cx="12" cy="6" rx="7" ry="3" /><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" /></S>
+)
+export const IconRocket: FC<P> = (p) => (
+  <S {...p}><path d="M14 4c3 0 6 3 6 6l-7 7-6-6zM7 11l-3 1 2 2M13 17l-1 3-2-2M15 9h.01" /></S>
+)

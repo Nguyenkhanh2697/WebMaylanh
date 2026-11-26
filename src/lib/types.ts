@@ -19,7 +19,7 @@ export type Env = {
   CHECKOUT_MODE?: string
 }
 
-export type AppEnv = { Bindings: Env; Variables: { admin?: string } }
+export type AppEnv = { Bindings: Env; Variables: { admin?: string; badges?: { orders: number; quotes: number } } }
 
 export type Product = {
   id: number
