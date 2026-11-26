@@ -1,0 +1,24 @@
+{
+  "name": "maylanhoto-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:test": "wrangler deploy --env test",
+    "typecheck": "tsc --noEmit",
+    "db:migrate:local": "wrangler d1 migrations apply maylanhoto --local",
+    "db:migrate:remote": "wrangler d1 migrations apply maylanhoto --remote",
+    "db:seed:local": "wrangler d1 execute maylanhoto --local --file=./seed/seed.sql && wrangler d1 execute maylanhoto --local --file=./seed/vin.sql && wrangler d1 execute maylanhoto --local --file=./seed/reindex.sql",
+    "db:seed:remote": "wrangler d1 execute maylanhoto --remote --file=./seed/seed.sql && wrangler d1 execute maylanhoto --remote --file=./seed/vin.sql && wrangler d1 execute maylanhoto --remote --file=./seed/reindex.sql"
+  },
+  "dependencies": {
+    "hono": "^4.13.16"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261104.1",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.158.0"
+  }
+}

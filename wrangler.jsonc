@@ -1,0 +1,62 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "maylanhoto-web",
+  "main": "src/index.tsx",
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "./public", "binding": "ASSETS" },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "maylanhoto",
+      // Tạo bằng: npx wrangler d1 create maylanhoto, rồi dán database_id vào đây
+      "database_id": "63d89a9b-bbb8-4f7c-95b6-06c349a2ed1b",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // TẠM TẮT: tài khoản cửa hàng chưa bật R2. Bật R2 trên trang Cloudflare, chạy
+  // npx wrangler r2 bucket create maylanhoto-images, rồi bỏ comment khối dưới và deploy lại
+  // "r2_buckets": [
+  //   { "binding": "IMAGES", "bucket_name": "maylanhoto-images" }
+  // ],
+  "vars": {
+    "SITE_NAME": "maylanhoto.vn",
+    "SITE_URL": "https://maylanhoto.vn",
+    "PHONE": "0963916379",
+    "ZALO": "0963916379",
+    "EMAIL": "maylanhotovn79@gmail.com",
+    "ADDRESS": "Số 37 phố Đồng Nhân, Phường Hai Bà Trưng, TP Hà Nội",
+    // Thông tin nhận tiền QR: cửa hàng cung cấp (Điều 9 hợp đồng)
+    "BANK_ID": "VPB",
+    "BANK_ACCOUNT": "000000000",
+    "BANK_ACCOUNT_NAME": "TEN CHU TAI KHOAN",
+    // Link chạy thử: ẩn chức năng chưa tới hạn theo tab Kế hoạch. Bỏ dần từng mục khi tới ngày gửi, để trống khi chạy chính thức
+    // search = tìm kiếm, catalog = danh mục + trang sản phẩm, posts = bài viết, pages = trang chính sách (gửi 04/12) · cart = giỏ hàng, đặt hàng (gửi 11/12) · vin = tìm theo số khung (17/12) · quote = yêu cầu báo giá, admin = trang quản trị (04/12)
+    "HIDE": "search,catalog,posts,pages,cart,vin,quote,admin",
+    // Giỏ hàng: "quote" = gửi yêu cầu báo giá, không thanh toán trên web (theo ý khách 21/11); "pay" = đặt hàng + COD/QR
+    "CHECKOUT_MODE": "quote"
+  },
+  // Link test nội bộ (không gửi khách): mở hết chức năng. Deploy: npm run deploy:test
+  // HIDE = "none" để không ẩn gì nhưng vẫn gắn noindex. Dùng chung database với link chạy thử.
+  "env": {
+    "test": {
+      "name": "maylanhoto-web-test",
+      "d1_databases": [
+        { "binding": "DB", "database_name": "maylanhoto", "database_id": "63d89a9b-bbb8-4f7c-95b6-06c349a2ed1b", "migrations_dir": "migrations" }
+      ],
+      "vars": {
+        "SITE_NAME": "maylanhoto.vn",
+        "SITE_URL": "https://maylanhoto.vn",
+        "PHONE": "0963916379",
+        "ZALO": "0963916379",
+        "EMAIL": "maylanhotovn79@gmail.com",
+        "ADDRESS": "Số 37 phố Đồng Nhân, Phường Hai Bà Trưng, TP Hà Nội",
+        "BANK_ID": "VPB",
+        "BANK_ACCOUNT": "000000000",
+        "BANK_ACCOUNT_NAME": "TEN CHU TAI KHOAN",
+        "HIDE": "none",
+        "CHECKOUT_MODE": "quote"
+      }
+    }
+  }
+  // SESSION_SECRET đặt bằng: npx wrangler secret put SESSION_SECRET (local: file .dev.vars)
+}

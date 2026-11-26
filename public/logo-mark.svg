@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 706 346" role="img" aria-label="DQT – maylanhoto.vn">
+<defs><linearGradient id="sv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4f6f4"/><stop offset=".45" stop-color="#b9c1bc"/><stop offset=".7" stop-color="#8e9893"/><stop offset="1" stop-color="#d9ddda"/></linearGradient></defs>
+<path d="M418,0H690V60H584V296H520V60H418Z" fill="#0a3a17"/>
+<path d="M199,148a146,146 0 1 0 292,0a146,146 0 1 0 -292,0Z M253,148a92,92 0 1 0 184,0a92,92 0 1 0 -184,0Z" fill="url(#sv)" fill-rule="evenodd" stroke="#6f7a74" stroke-width="2"/>
+<path d="M0,0H112A148,148 0 0 1 112,296H0Z M62,58H112A90,90 0 0 1 112,238H62Z" fill="#0a3a17" fill-rule="evenodd" stroke="#fff" stroke-width="7" paint-order="stroke"/>
+<path d="M390.1,286.9A146,146 0 0 1 207.8,98.1L258.5,116.5A92,92 0 0 0 373.4,235.5Z" fill="#0a3a17"/>
+<polygon points="453.9,309.8 379.6,242.2 358.0,265.9 338.0,172.0 433.4,183.0 411.9,206.7 486.1,274.2" fill="#3c6236" stroke="#fff" stroke-width="6" paint-order="stroke"/>
+</svg>

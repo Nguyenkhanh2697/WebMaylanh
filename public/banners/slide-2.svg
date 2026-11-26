@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 420" width="600" height="420"><defs>
+  <linearGradient id="mBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7faf8"/><stop offset=".45" stop-color="#cdd6d0"/><stop offset="1" stop-color="#86948c"/></linearGradient>
+  <linearGradient id="mBodyH" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8a978f"/><stop offset=".45" stop-color="#eef2ef"/><stop offset="1" stop-color="#7c8a82"/></linearGradient>
+  <linearGradient id="mDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#66736b"/><stop offset="1" stop-color="#2b3530"/></linearGradient>
+  <linearGradient id="mDarkH" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1f2723"/><stop offset=".5" stop-color="#4c5852"/><stop offset="1" stop-color="#1c2420"/></linearGradient>
+  <radialGradient id="mPulley" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#c4cec8"/><stop offset=".6" stop-color="#76837b"/><stop offset="1" stop-color="#46514a"/></radialGradient>
+  <linearGradient id="shade" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></linearGradient>
+  <linearGradient id="blade" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a5650"/><stop offset="1" stop-color="#1e2622"/></linearGradient>
+  <radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffffff" stop-opacity=".95"/><stop offset=".6" stop-color="#e3f3e9" stop-opacity=".55"/><stop offset="1" stop-color="#e3f3e9" stop-opacity="0"/></radialGradient>
+  <pattern id="fins" width="6" height="5" patternUnits="userSpaceOnUse"><rect width="6" height="5" fill="#7b8981"/><rect width="6" height="2.2" fill="#e2e8e4"/></pattern>
+  <pattern id="finsV" width="5" height="6" patternUnits="userSpaceOnUse"><rect width="5" height="6" fill="#77857d"/><rect width="2.2" height="6" fill="#dde4e0"/></pattern>
+  <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6"/></filter>
+</defs><circle cx="300" cy="220" r="200" fill="url(#glow)"/><g transform="translate(20 60) scale(1.25)">
+  <ellipse cx="160" cy="200" rx="160" ry="12" fill="#0f2418" opacity=".18" filter="url(#soft)"/>
+  <rect x="26" y="20" width="252" height="164" rx="5" fill="#34413a"/>
+  <rect x="34" y="28" width="236" height="148" fill="url(#fins)"/>
+  <rect x="34" y="28" width="236" height="148" fill="url(#shade)"/>
+  <rect x="8" y="10" width="24" height="184" rx="10" fill="url(#mBodyH)"/>
+  <rect x="272" y="10" width="24" height="184" rx="10" fill="url(#mBodyH)"/>
+  <rect x="304" y="36" width="24" height="130" rx="12" fill="url(#mDarkH)"/>
+  <rect x="300" y="30" width="32" height="12" rx="4" fill="url(#mDark)"/>
+  <path d="M296 60h8M296 140h8" stroke="#9aa69f" stroke-width="6"/>
+  <path d="M20 10V-12h40" stroke="url(#mBodyH)" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <path d="M20 194v20h50" stroke="url(#mBodyH)" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <rect x="52" y="-20" width="22" height="16" rx="3" fill="url(#mDark)"/>
+  <rect x="64" y="206" width="22" height="16" rx="3" fill="url(#mDark)"/>
+  <rect x="100" y="184" width="20" height="16" rx="3" fill="#2b3530"/><rect x="190" y="184" width="20" height="16" rx="3" fill="#2b3530"/>
+</g><g transform="translate(360 210) scale(1.05)">
+  <ellipse cx="100" cy="178" rx="100" ry="12" fill="#0f2418" opacity=".18" filter="url(#soft)"/>
+  <rect x="10" y="44" width="180" height="124" rx="5" fill="#3e4b44"/>
+  <rect x="18" y="52" width="164" height="108" fill="url(#finsV)"/>
+  <rect x="18" y="52" width="164" height="108" fill="url(#shade)"/>
+  <rect x="4" y="30" width="192" height="18" rx="7" fill="url(#mBody)"/>
+  <path d="M60 30V8h40M90 30V16h10" stroke="url(#mBodyH)" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <rect x="96" y="-6" width="46" height="30" rx="5" fill="url(#mDark)"/>
+  <circle cx="119" cy="9" r="6" fill="#cfd8d2"/>
+  <path d="M142 2h30M142 16h22" stroke="url(#mBodyH)" stroke-width="8" stroke-linecap="round"/>
+</g></svg>
