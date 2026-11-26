@@ -728,7 +728,7 @@ pub.get('/yeu-cau-bao-gia', (c) => {
       <PageHead crumbs={[['Trang chủ', '/'], ['Yêu cầu báo giá']]} title="Yêu cầu báo giá" sub="Không tìm thấy phụ tùng hoặc chưa chắc đúng xe? Gửi thông tin xe, cửa hàng tra mã và báo giá cho bạn." />
       {ok && <div class="notice-ok"><IconCheck size={22} /> Đã gửi yêu cầu. Cửa hàng sẽ gọi lại cho bạn sớm.</div>}
       <div class="co">
-        <form method="post" action="/api/quote" class="co-main">
+        <form method="post" action="/api/quote" class="co-main" data-loader="Đang gửi yêu cầu…">
           <input type="hidden" name="product_sku" value={c.req.query('sku') || ''} />
           <section class="co-card">
             <h2><IconUser size={18} /> Thông tin liên hệ</h2>

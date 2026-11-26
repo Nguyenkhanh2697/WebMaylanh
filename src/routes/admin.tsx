@@ -18,6 +18,7 @@ const AdminLayout: FC<PropsWithChildren<{ title: string }>> = ({ title, children
       <meta name="robots" content="noindex" />
       <title>{title} – Quản trị</title>
       <link rel="stylesheet" href="/style.css" />
+      <script src="/forms.js" defer></script>
     </head>
     <body class="admin">
       <header class="site-header">
@@ -46,10 +47,10 @@ admin.get('/cai-dat', async (c) => {
   return c.html(
     <AdminLayout title="Cài đặt">
       <h1>Tạo tài khoản quản trị</h1>
-      <form method="post" class="form">
-        <input name="username" placeholder="Tên đăng nhập" required />
-        <input name="password" type="password" placeholder="Mật khẩu (tối thiểu 10 ký tự)" minlength={10} required />
-        <button class="btn btn-primary">Tạo</button>
+      <form method="post" class="form" data-loader="Đang tạo tài khoản…">
+        <label class="f-row"><span>Tên đăng nhập <i>*</i></span><input name="username" placeholder="Ví dụ: dqt" required autocomplete="username" /></label>
+        <label class="f-row"><span>Mật khẩu <i>*</i></span><input name="password" type="password" placeholder="Tối thiểu 10 ký tự" minlength={10} required autocomplete="new-password" /></label>
+        <button class="btn btn-primary">Tạo tài khoản</button>
       </form>
     </AdminLayout>,
   )
@@ -60,7 +61,7 @@ admin.post('/cai-dat', async (c) => {
   const f = await c.req.parseBody()
   const username = String(f.username || '').trim()
   const password = String(f.password || '')
-  if (!username || password.length < 10) return c.text('Mật khẩu tối thiểu 10 ký tự', 400)
+  if (!username || password.length < 10) return c.redirect('/admin/cai-dat')
   const salt = randomSalt()
   await c.env.DB.prepare('INSERT INTO admins (username, pass_hash, salt) VALUES (?,?,?)')
     .bind(username, await hashPassword(password, salt), salt)
@@ -68,25 +69,28 @@ admin.post('/cai-dat', async (c) => {
   return c.redirect('/admin/dang-nhap')
 })
 
-admin.get('/dang-nhap', (c) =>
-  c.html(
-    <AdminLayout title="Đăng nhập">
-      <h1>Đăng nhập quản trị</h1>
-      <form method="post" class="form">
-        <input name="username" placeholder="Tên đăng nhập" required />
-        <input name="password" type="password" placeholder="Mật khẩu" required />
-        <button class="btn btn-primary">Đăng nhập</button>
-      </form>
-    </AdminLayout>,
-  ),
+// Sai mật khẩu: hiện lại form, báo đỏ dưới ô mật khẩu, giữ tên đăng nhập đã gõ
+const LoginPage: FC<{ username?: string; wrong?: boolean }> = ({ username = '', wrong }) => (
+  <AdminLayout title="Đăng nhập">
+    <h1>Đăng nhập quản trị</h1>
+    <form method="post" action="/admin/dang-nhap" class="form" data-loader="Đang đăng nhập…">
+      <label class="f-row"><span>Tên đăng nhập <i>*</i></span><input name="username" value={username} required autocomplete="username" /></label>
+      <label class="f-row"><span>Mật khẩu <i>*</i></span>
+        <input name="password" type="password" required autocomplete="current-password" class={wrong ? 'is-invalid' : undefined} aria-invalid={wrong ? 'true' : undefined} autofocus={wrong} />
+        {wrong && <small class="f-err" role="alert">Sai tên đăng nhập hoặc mật khẩu. Bạn kiểm tra lại (chú ý chữ hoa, chữ thường).</small>}
+      </label>
+      <button class="btn btn-primary">Đăng nhập</button>
+    </form>
+  </AdminLayout>
 )
+admin.get('/dang-nhap', (c) => c.html(<LoginPage />))
 admin.post('/dang-nhap', async (c) => {
   const f = await c.req.parseBody()
   const user = await c.env.DB.prepare('SELECT * FROM admins WHERE username = ?')
     .bind(String(f.username || ''))
     .first<{ username: string; pass_hash: string; salt: string }>()
   if (!user || !(await verifyPassword(String(f.password || ''), user.salt, user.pass_hash))) {
-    return c.text('Sai tên đăng nhập hoặc mật khẩu', 401)
+    return c.html(<LoginPage username={String(f.username || '')} wrong />, 401)
   }
   await setSignedCookie(c, COOKIE, user.username, c.env.SESSION_SECRET, {
     httpOnly: true, secure: new URL(c.req.url).protocol === 'https:', sameSite: 'Lax', path: '/admin', maxAge: 60 * 60 * 24 * 7,
@@ -146,7 +150,7 @@ admin.get('/don-hang', async (c) => {
               <td>{o.status}</td>
               <td>{o.created_at}</td>
               <td>
-                <form method="post" action={`/admin/don-hang/${o.id}`} class="inline">
+                <form method="post" action={`/admin/don-hang/${o.id}`} class="inline" data-loader="Đang lưu…">
                   <select name="status">
                     {['Chờ thanh toán', 'Đã thanh toán', 'Đã giao', 'Huỷ'].map((s) => <option selected={s === o.status}>{s}</option>)}
                   </select>
@@ -185,7 +189,7 @@ admin.get('/bao-gia', async (c) => {
               <td>{q.vehicle}</td><td>{q.message}</td><td>{q.product_sku}</td>
               <td>
                 {!q.handled && (
-                  <form method="post" action={`/admin/bao-gia/${q.id}`} class="inline"><button class="btn">Đã xử lý</button></form>
+                  <form method="post" action={`/admin/bao-gia/${q.id}`} class="inline" data-loader="Đang lưu…"><button class="btn">Đã xử lý</button></form>
                 )}
               </td>
             </tr>
@@ -209,7 +213,7 @@ admin.get('/san-pham', async (c) => {
   return c.html(
     <AdminLayout title="Sản phẩm">
       <h1>Sản phẩm</h1>
-      <form class="inline"><input name="q" value={q} placeholder="Mã, tên, mã OEM" /><button class="btn">Tìm</button></form>
+      <form class="inline" data-loader="Đang tìm…"><input name="q" value={q} placeholder="Mã, tên, mã OEM" aria-label="Tìm sản phẩm" /><button class="btn">Tìm</button></form>
       <p>Thêm, sửa hàng loạt bằng <a href="/admin/nhap-excel">Nhập Excel</a> theo file mẫu.</p>
       <table class="fit-table">
         <thead><tr><th>Mã</th><th>Tên</th><th>Loại</th><th>Giá</th><th>Tình trạng</th></tr></thead>
@@ -241,7 +245,7 @@ admin.get('/sap-xep', async (c) => {
       <h1>Sắp xếp sản phẩm trên trang chủ</h1>
       <p>Đánh số thứ tự: số nhỏ hiện trước. Mỗi trang của dải sản phẩm có 4 sản phẩm: số 1–4 là trang 1, 5–8 là trang 2... Để trống thì sản phẩm xếp sau, theo tên.</p>
       {saved && <p class="ok">Đã lưu thứ tự.</p>}
-      <form method="post" class="form">
+      <form method="post" class="form" data-loader="Đang lưu thứ tự…">
         <table class="fit-table">
           <thead><tr><th>Thứ tự</th><th>Trang</th><th>Sản phẩm</th><th>Danh mục</th></tr></thead>
           <tbody>
@@ -281,7 +285,7 @@ admin.get('/nhap-excel', (c) =>
       <h1>Nhập sản phẩm từ Excel</h1>
       <p>Dùng đúng file mẫu (sheet "Sản phẩm" và "Xe phù hợp"). Sản phẩm trùng mã sẽ được cập nhật, mã mới sẽ được thêm.</p>
       <div class="form">
-        <input type="file" id="xlsx-file" accept=".xlsx" />
+        <input type="file" id="xlsx-file" accept=".xlsx" data-label="file Excel (.xlsx) theo mẫu" />
         <label><input type="checkbox" id="skip-examples" checked /> Bỏ qua các dòng ví dụ (cột Mô tả có chữ "VÍ DỤ")</label>
         <button class="btn btn-primary" id="xlsx-import">Nhập dữ liệu</button>
       </div>
@@ -312,7 +316,7 @@ admin.get('/anh', (c) =>
       <h1>Tải ảnh sản phẩm</h1>
       <p>Chọn nhiều ảnh cùng lúc. Tên file phải trùng với cột "Tên file ảnh" trong Excel. Ảnh được tự nén trước khi tải lên.</p>
       <div class="form">
-        <input type="file" id="img-files" accept="image/*" multiple />
+        <input type="file" id="img-files" accept="image/*" multiple data-label="ảnh sản phẩm" />
         <button class="btn btn-primary" id="img-upload">Tải lên</button>
       </div>
       <pre id="img-log" class="log"></pre>

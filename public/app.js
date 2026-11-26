@@ -181,22 +181,27 @@ if (cartBox) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault()
     err.textContent = ''
+    // Tên, số điện thoại đã được public/forms.js kiểm tra và báo dưới từng ô
+    if (window.FormCheck && !FormCheck.validate(form)) return
     const data = Object.fromEntries(new FormData(form))
-    if (!String(data.customer_name || '').trim()) { err.textContent = 'Vui lòng nhập tên.'; form.customer_name.focus(); return }
-    if (String(data.phone || '').replace(/\D/g, '').length < 9) { err.textContent = 'Vui lòng nhập số điện thoại đúng.'; form.phone.focus(); return }
     if (data.pay === 'cod') data.note = ['Thanh toán khi nhận hàng', data.note].filter(Boolean).join(' · ')
     data.items = cart.get().map((i) => ({ id: i.id, qty: i.qty }))
     const btn = document.getElementById('co-submit')
     btn.disabled = true
     btn.classList.add('is-loading')
+    window.Loader && Loader.show(quote ? 'Đang gửi yêu cầu báo giá…' : 'Đang đặt hàng…', 'Vui lòng không tắt trang')
     try {
       const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
-      const out = await res.json()
-      if (!res.ok) throw new Error(out.error || 'Gửi chưa được, vui lòng thử lại')
+      const out = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(out.error || 'Hệ thống đang bận. Bạn bấm gửi lại sau ít giây nhé.')
       cart.set([])
       location.href = '/don-hang/' + out.code
     } catch (x) {
-      err.textContent = x.message
+      window.Loader && Loader.hide()
+      // Mất mạng: fetch báo TypeError
+      const msg = x instanceof TypeError ? 'Không kết nối được. Bạn kiểm tra mạng rồi bấm gửi lại nhé.' : x.message
+      if (/điện thoại|họ tên/i.test(msg) && window.FormCheck) FormCheck.validate(form)
+      err.textContent = msg
       btn.disabled = false
       btn.classList.remove('is-loading')
     }
@@ -401,6 +406,7 @@ document.querySelectorAll('.sp-tabs').forEach((tabs) => {
     const vinOn = vinTab && getComputedStyle(tabs).display !== 'none' && getComputedStyle(vinTab).display !== 'none'
     if (vinOn && /^[A-HJ-NPR-Z0-9]{17}$/i.test(v)) {
       e.preventDefault()
+      window.Loader && Loader.show('Đang tra số khung…', 'Đang nhận diện hãng, đời xe', 350)
       location.href = '/tra-vin?vin=' + encodeURIComponent(v.toUpperCase())
     }
   })

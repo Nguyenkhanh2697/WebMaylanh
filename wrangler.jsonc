@@ -35,8 +35,9 @@
     // Giỏ hàng: "quote" = gửi yêu cầu báo giá, không thanh toán trên web (theo ý khách 21/11); "pay" = đặt hàng + COD/QR
     "CHECKOUT_MODE": "quote"
   },
-  // Link test nội bộ (không gửi khách): mở hết chức năng. Deploy: npm run deploy:test
-  // HIDE = "none" để không ẩn gì nhưng vẫn gắn noindex. Dùng chung database với link chạy thử.
+  // Link test nội bộ. Deploy: npm run deploy:test. Dùng chung database với link chạy thử.
+  // Đang ẩn theo lịch giống link khách. Muốn mở hết để test: đổi HIDE thành "none" (không ẩn gì, vẫn gắn noindex) rồi deploy:test.
+  // Chạy trên máy (npm run dev) luôn mở hết nhờ HIDE=none trong .dev.vars.
   "env": {
     "test": {
       "name": "maylanhoto-web-test",
@@ -53,7 +54,7 @@
         "BANK_ID": "VPB",
         "BANK_ACCOUNT": "000000000",
         "BANK_ACCOUNT_NAME": "TEN CHU TAI KHOAN",
-        "HIDE": "none",
+        "HIDE": "search,catalog,posts,pages,cart,vin,quote,admin",
         "CHECKOUT_MODE": "quote"
       }
     }

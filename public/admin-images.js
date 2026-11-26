@@ -17,11 +17,14 @@ async function compress(file, max = 1200, quality = 0.82) {
 }
 
 document.getElementById('img-upload').addEventListener('click', async () => {
-  const files = [...document.getElementById('img-files').files]
-  if (!files.length) return alert('Chọn ảnh trước')
+  const input = document.getElementById('img-files')
+  const files = [...input.files]
+  if (!files.length) { input.required = true; FormCheck.validate(input.parentElement); return }
+  FormCheck.clear(input)
   imgLog.textContent = ''
   let ok = 0
-  for (const f of files) {
+  for (const [i, f] of files.entries()) {
+    Loader.show(`Đang nén và tải ảnh ${i + 1}/${files.length}…`, 'Đừng tắt trang trong lúc tải')
     try {
       const blob = await compress(f)
       const key = toKey(f.name)
@@ -33,5 +36,6 @@ document.getElementById('img-upload').addEventListener('click', async () => {
       sayImg(`✗ ${f.name}: ${e.message}`)
     }
   }
+  Loader.hide()
   sayImg(`\nĐã tải ${ok}/${files.length} ảnh`)
 })

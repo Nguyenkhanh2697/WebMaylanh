@@ -171,6 +171,7 @@ export const Layout: FC<LayoutProps> = ({ env, title, description, canonical, js
         </div>
       </footer>
       <a href={`https://zalo.me/${env.ZALO}`} class="zalo-float" target="_blank" rel="noopener" aria-label="Chat Zalo"><IconZalo size={52} /></a>
+      <script src="/forms.js" defer></script>
       <script src="/app.js" defer></script>
     </body>
   </html>
@@ -220,7 +221,7 @@ export const SearchPanel: FC<{
       <form action="/tra-vin" method="get" class="sp-row sp-vin" data-sp-form="vin" hidden={!vinTab}>
         <div class="input-icon">
           <IconBarcode size={16} />
-          <input name="vin" value={values.vin || ''} placeholder="Nhập số khung 17 ký tự, VD: JTDBT923771234567" aria-label="Số khung" autocomplete="off" maxlength={17} style="text-transform:uppercase" />
+          <input name="vin" required data-label="số khung" value={values.vin || ''} placeholder="Nhập số khung 17 ký tự, VD: JTDBT923771234567" aria-label="Số khung" autocomplete="off" maxlength={17} style="text-transform:uppercase" />
         </div>
         <button class="btn-navy" type="submit"><IconCar size={16} /> Tra số khung</button>
       </form>

@@ -51,12 +51,13 @@ Biến `HIDE` trong `wrangler.jsonc` điều khiển phần nào được mở (
 - 21/11: máy tính 1 banner cố định (không chuyển cảnh); điện thoại 3 slide theo câu chữ cửa hàng; bỏ khoảng giá ở danh sách; dải sản phẩm không tự chạy, khách tự lướt (4 SP/trang); nút giỏ hàng tròn cạnh giá (khi `cart` còn ẩn thì báo "mở ngày 11/12"); trang quản trị **Sắp xếp trang chủ** (`/admin/sap-xep`, cột `home_order`, migration 0003). Ảnh banner: cửa hàng gửi 26/11, đã thay (`public/banners/banner-pc.jpg`, `banner-m.jpg`).
 - 24/11 (việc 7): giao diện các trang con cùng phong cách trang chủ: `PageHead` (breadcrumb) ở mọi trang con; trang sản phẩm mới (ô số lượng − +, nút Gọi/Zalo, cam kết, sản phẩm cùng danh mục); giỏ hàng theo mẫu khách 21/11 (Thông tin liên hệ + Địa chỉ giao hàng 34 tỉnh | Đơn hàng của bạn); trang gửi thành công; tra số khung dạng thẻ; bài viết có cột bài khác; Hỗ trợ có menu chính sách; trang quản trị nền xanh. Biến `CHECKOUT_MODE` = `quote` (gửi yêu cầu báo giá, không thanh toán) hoặc `pay` (COD/QR) – khách đang muốn bỏ thanh toán, chờ phụ lục điều chỉnh giá.
 - 26/11 (góp ý file thiết kế các trang): giỏ hàng bỏ Email và Tỉnh/Thành, Địa chỉ + Ghi chú gộp vào Thông tin liên hệ; chọn loại tách 3 nhóm Nhà sản xuất · Xuất xứ · Điện áp (nhóm không có dữ liệu thì ẩn, tổ hợp không có hàng thì nút mờ, bấm vào chuyển sang loại gần nhất); không có nút "Mua ngay", "Thêm vào giỏ" là nút chính.
+- 26/11: báo lỗi form dưới từng ô + viền đỏ, màn hình chờ hình quạt dàn nóng (`public/forms.js`, nạp ở cả trang khách và quản trị; form đặt chữ chờ bằng `data-loader`, tắt bằng `data-loader="off"`). Số khung ngắn vẫn hợp lệ (≥ 6 ký tự).
 
 ## Triển khai
 
 - Cloudflare Workers + Hono (JSX) + D1. R2 đang tắt vì tài khoản chưa bật (xem comment trong `wrangler.jsonc`); `IMAGES` là tuỳ chọn trong code.
 - Node ≥ 22 (`.nvmrc`). Không commit `.dev.vars`.
-- Link test nội bộ mở full (không gửi khách): `npm run deploy:test` → maylanhoto-web-test.nguyenkhanh2697.workers.dev (env `test` trong `wrangler.jsonc`, HIDE="none", chung database).
+- Link test nội bộ: `npm run deploy:test` → maylanhoto-web-test.nguyenkhanh2697.workers.dev (env `test` trong `wrangler.jsonc`, chung database). Đang ẩn theo lịch như link khách; muốn mở hết thì đổi HIDE env test thành "none". Chạy máy (`npm run dev`) luôn mở hết nhờ `.dev.vars`.
 - Lệnh: `npm run dev`, `npm run typecheck`, `npm run deploy`, `npm run db:migrate:remote`, `npm run db:seed:remote`.
 
 ## Việc còn lại

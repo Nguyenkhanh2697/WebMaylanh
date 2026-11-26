@@ -50,8 +50,12 @@ async function post(url, rows) {
 }
 
 document.getElementById('xlsx-import').addEventListener('click', async () => {
-  const file = document.getElementById('xlsx-file').files[0]
-  if (!file) return alert('Chọn file Excel trước')
+  const input = document.getElementById('xlsx-file')
+  const file = input.files[0]
+  if (!file) { input.required = true; FormCheck.validate(input.parentElement); return }
+  if (!/\.xlsx$/i.test(file.name)) { FormCheck.show(input, 'File phải là Excel đuôi .xlsx (tải file mẫu, điền rồi lưu lại).'); return }
+  FormCheck.clear(input)
+  Loader.show('Đang nhập dữ liệu…', 'Đừng tắt trang trong lúc nhập')
   const skip = document.getElementById('skip-examples').checked
   log.textContent = ''
   try {
@@ -71,6 +75,7 @@ document.getElementById('xlsx-import').addEventListener('click', async () => {
       n += r.imported
       errors = errors.concat(r.errors)
       say(`Sản phẩm: ${Math.min(i + 500, products.length)}/${products.length}`)
+      Loader.show(`Đang nhập sản phẩm ${Math.min(i + 500, products.length)}/${products.length}…`, 'Đừng tắt trang trong lúc nhập')
     }
     say(`✓ Nhập ${n} sản phẩm`)
 
@@ -101,5 +106,7 @@ document.getElementById('xlsx-import').addEventListener('click', async () => {
     } else say('\nKhông có lỗi.')
   } catch (e) {
     say('Lỗi: ' + e.message)
+  } finally {
+    Loader.hide()
   }
 })

@@ -920,3 +920,37 @@ body.admin{background:#f4f8f5}
 .admin pre.log{background:#fff;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:14px;font-size:13px;white-space:pre-wrap;min-height:0}
 .admin pre.log:empty{display:none}
 .done-items .cl{grid-template-columns:minmax(0,1fr) auto auto;gap:14px}
+
+/* ---------- Báo lỗi dưới từng ô (public/forms.js) ---------- */
+.f-err{display:flex;align-items:flex-start;gap:6px;color:#b42318;font-size:13px;line-height:1.45;font-weight:500;margin-top:2px;animation:ferr-in .2s ease}
+.f-err svg{flex:none;margin-top:2px;color:#d92d20}
+input.is-invalid,select.is-invalid,textarea.is-invalid,.input-icon.is-invalid,
+.f-row input.is-invalid,.f-row select.is-invalid,.f-row textarea.is-invalid,.form input.is-invalid{border-color:#d92d20!important;background:#fff8f7}
+input.is-invalid:focus,textarea.is-invalid:focus,select.is-invalid:focus,.input-icon.is-invalid:focus-within{box-shadow:0 0 0 3px rgba(217,45,32,.14)!important;outline:0}
+.input-icon.is-invalid input{background:transparent}
+.sp-row{flex-wrap:wrap}
+.sp-row>.f-err{flex-basis:100%;order:3;margin-top:-2px}
+@media (max-width:720px){.sp-row>.f-err{order:1;margin-top:-4px}.sp-row>button{order:2}}
+.form .f-row{margin-bottom:4px}
+@keyframes ferr-in{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+
+/* ---------- Màn hình chờ: quạt dàn nóng quay (public/forms.js) ---------- */
+.loader{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:rgba(240,247,242,.72);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s}
+.loader.show{opacity:1;visibility:visible}
+.ld-card{display:grid;justify-items:center;gap:6px;background:#fff;border:1px solid #d6eadc;border-radius:20px;padding:26px 34px 22px;box-shadow:0 18px 50px rgba(20,48,29,.18);min-width:240px;max-width:86vw;text-align:center;transform:scale(.94);transition:transform .3s cubic-bezier(.2,.9,.3,1.2)}
+.loader.show .ld-card{transform:none}
+.ld-fan{width:96px;height:96px;margin-bottom:6px}
+.ld-ring{fill:none;stroke:#e3f2e8;stroke-width:6}
+.ld-flow{fill:none;stroke:#2e8b57;stroke-width:6;stroke-linecap:round;stroke-dasharray:60 280;transform-origin:60px 60px;animation:ld-spin 1.6s linear infinite reverse}
+.ld-shroud{fill:#f3faf5;stroke:#1f5130;stroke-width:3}
+.ld-blades{fill:#1f5130;transform-origin:60px 60px;animation:ld-spin .8s cubic-bezier(.45,.1,.55,.9) infinite}
+.ld-blades path{fill:#245e39;stroke:#f3faf5;stroke-width:1.2}
+.ld-strut{fill:#c9e3d2}
+.ld-hub{fill:#14301d;stroke:#8fd3a8;stroke-width:2}
+.ld-snow{fill:none;stroke:#bdf0cf;stroke-width:2.2;transform-origin:60px 60px;animation:ld-pulse 1.6s ease-in-out infinite}
+.ld-text{margin:0;font-weight:700;font-size:16px;color:#14301d}
+.ld-sub{color:#5b6b61;font-size:13px}
+html.is-busy{cursor:progress}
+@keyframes ld-spin{to{transform:rotate(360deg)}}
+@keyframes ld-pulse{0%,100%{opacity:.55;transform:scale(.85)}50%{opacity:1;transform:scale(1.05)}}
+@media (prefers-reduced-motion:reduce){.ld-blades{animation-duration:2.4s}.ld-flow,.ld-snow{animation:none}}
